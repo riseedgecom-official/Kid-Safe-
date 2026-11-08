@@ -1,0 +1,46 @@
+name: Build APKs
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Unpack project
+        run: |
+          unzip -q ./*.zip
+          for f in ./*.json; do
+            if grep -q 'com.example.kidsafe.child' "$f"; then
+              cp "$f" kidsafe/child/google-services.json
+            fi
+            if grep -q 'com.example.kidsafe.parent' "$f"; then
+              cp "$f" kidsafe/parent/google-services.json
+            fi
+          done
+          test -f kidsafe/child/google-services.json
+          test -f kidsafe/parent/google-services.json
+      - name: Build
+        working-directory: kidsafe
+        run: gradle :child:assembleDebug :parent:assembleDebug --stacktrace
+      - name: Collect APKs
+        run: |
+          cp kidsafe/child/build/outputs/apk/debug/child-debug.apk KidSafe-Child.apk
+          cp kidsafe/parent/build/outputs/apk/debug/parent-debug.apk KidSafe-Parent.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          files: |
+            KidSafe-Child.apk
+            KidSafe-Parent.apk
