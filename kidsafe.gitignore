@@ -1,0 +1,11 @@
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+.DS_Store
+*.apk
+*.aab
+
+# NOTE: parent/google-services.json and child/google-services.json are intentionally
+# NOT ignored. The GitHub build needs them in the repo (one file per app).
